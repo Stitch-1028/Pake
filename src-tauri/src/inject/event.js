@@ -937,3 +937,8 @@ function getFilenameFromUrl(url) {
     return `image-${timestamp}.png`;
   }
 }
+
+// 在应用启动时请求通知权限
+if (window.Notification && Notification.permission === "default") {
+  Notification.requestPermission();
+}

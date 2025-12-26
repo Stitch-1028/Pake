@@ -73,7 +73,7 @@ export interface PakeCliOptions {
   // Set Api Proxy
   proxyUrl: string;
 
-  // Installer language, valid for Windows users, default is en-US
+  // Installer language, valid for Windows users, default is en-US/zh-CN
   installerLanguage: string;
 
   // Hide window on close instead of exiting, platform-specific: true for macOS, false for others

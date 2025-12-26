@@ -1,11 +1,11 @@
 {
-  "productName": "Weekly",
-  "identifier": "com.pake.weekly",
-  "version": "1.0.0",
+  "productName": "Co-Ai",
+  "identifier": "info.huanji.www",
+  "version": "0.0.1",
   "app": {
     "withGlobalTauri": true,
     "trayIcon": {
-      "iconPath": "png/weekly_512.png",
+      "iconPath": "images/logo_256.ico",
       "iconAsTemplate": false,
       "id": "pake-tray"
     },
