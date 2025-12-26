@@ -35,8 +35,8 @@ source ~/.bashrc
 **前置条件：**
 
 - Node.js ≥18.0.0
-- Rust ≥1.78.0（如缺失将自动安装）
-- **Windows/Linux**：详细系统依赖请参考 [高级用法指南](advanced-usage_CN.md#前置条件)
+- Rust ≥1.85.0（如缺失将自动安装）
+- **macOS/Linux**：`curl`、`wget`、`file` 和 `tar`（用于依赖管理）
 
 ## 快速开始
 
@@ -136,6 +136,32 @@ pake https://github.com --name GitHub
 
 ```shell
 --width <number>
+```
+
+#### [min-width]
+
+设置窗口可以缩放到的最小宽度，防止窗口被拖得过小导致控件错位。
+
+```shell
+--min-width <number>
+```
+
+#### [min-height]
+
+设置窗口可以缩放到的最小高度，避免界面内容因高度过小而错乱。
+
+```shell
+--min-height <number>
+```
+
+#### [zoom]
+
+设置初始页面缩放级别（50-200），默认为 `100`。用户仍可通过快捷键（`Cmd/Ctrl +/-/0`）调整。
+
+```shell
+--zoom <number>
+--zoom 80   # 80%
+--zoom 120  # 120%
 ```
 
 #### [hide-title-bar]
@@ -373,6 +399,14 @@ pake https://github.com --name GitHub --keep-binary
 
 **输出结果**：同时创建安装包和独立可执行文件（Unix 系统为 `AppName-binary`，Windows 为 `AppName.exe`）。
 
+#### [iterative-build]
+
+开启快速构建模式（仅生成 app，不生成 dmg/deb/msi），适用于调试。默认为 `false`。
+
+```shell
+--iterative-build
+```
+
 #### [multi-instance]
 
 允许打包后的应用同时运行多个实例。默认为 `false`，此时再次启动只会聚焦已有窗口。启用该选项后，可以同时打开同一个应用的多个窗口。
@@ -435,6 +469,14 @@ pake ./my-app/index.html --name "my-app" --use-local-file
 
 ```shell
 --debug
+```
+
+#### [ignore-certificate-errors]
+
+忽略目标 URL 的 TLS 证书校验错误，适用于内网应用、开发环境、自签名证书。
+
+```shell
+--ignore-certificate-errors
 ```
 
 ### 打包完成

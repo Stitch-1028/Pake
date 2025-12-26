@@ -64,6 +64,20 @@ pub fn set_window(app: &mut App, config: &PakeConfig, tauri_config: &Config) -> 
         .always_on_top(window_config.always_on_top)
         .incognito(window_config.incognito);
 
+    if window_config.min_width > 0.0 || window_config.min_height > 0.0 {
+        let min_w = if window_config.min_width > 0.0 {
+            window_config.min_width
+        } else {
+            window_config.width
+        };
+        let min_h = if window_config.min_height > 0.0 {
+            window_config.min_height
+        } else {
+            window_config.height
+        };
+        window_builder = window_builder.min_inner_size(min_w, min_h);
+    }
+
     if !window_config.enable_drag_drop {
         window_builder = window_builder.disable_drag_drop_handler();
     }
@@ -74,6 +88,8 @@ pub fn set_window(app: &mut App, config: &PakeConfig, tauri_config: &Config) -> 
         .initialization_script(include_str!("../inject/component.js"))
         .initialization_script(include_str!("../inject/event.js"))
         .initialization_script(include_str!("../inject/style.js"))
+        .initialization_script(include_str!("../inject/theme_refresh.js"))
+        .initialization_script(include_str!("../inject/auth.js"))
         .initialization_script(include_str!("../inject/custom.js"));
 
     #[cfg(target_os = "windows")]
@@ -81,6 +97,23 @@ pub fn set_window(app: &mut App, config: &PakeConfig, tauri_config: &Config) -> 
 
     #[cfg(all(not(target_os = "windows"), not(target_os = "macos")))]
     let mut linux_browser_args = String::from("--disable-blink-features=AutomationControlled");
+
+    if window_config.ignore_certificate_errors {
+        #[cfg(target_os = "windows")]
+        {
+            windows_browser_args.push_str(" --ignore-certificate-errors");
+        }
+
+        #[cfg(all(not(target_os = "windows"), not(target_os = "macos")))]
+        {
+            linux_browser_args.push_str(" --ignore-certificate-errors");
+        }
+
+        #[cfg(target_os = "macos")]
+        {
+            window_builder = window_builder.additional_browser_args("--ignore-certificate-errors");
+        }
+    }
 
     if window_config.enable_wasm {
         #[cfg(target_os = "windows")]
@@ -161,6 +194,48 @@ pub fn set_window(app: &mut App, config: &PakeConfig, tauri_config: &Config) -> 
         #[cfg(debug_assertions)]
         println!("Proxy configured: {}", config.proxy_url);
     }
+
+    // Allow navigation to OAuth/authentication domains
+    window_builder = window_builder.on_navigation(|url| {
+        let url_str = url.as_str();
+
+        // Always allow same-origin navigation
+        if url_str.starts_with("http://localhost") || url_str.starts_with("http://127.0.0.1") {
+            return true;
+        }
+
+        // Check for OAuth/authentication domains
+        let auth_patterns = [
+            "accounts.google.com",
+            "login.microsoftonline.com",
+            "github.com/login",
+            "appleid.apple.com",
+            "facebook.com",
+            "twitter.com",
+        ];
+
+        let auth_paths = ["/oauth/", "/auth/", "/authorize", "/login"];
+
+        // Allow if matches auth patterns
+        for pattern in &auth_patterns {
+            if url_str.contains(pattern) {
+                #[cfg(debug_assertions)]
+                println!("Allowing OAuth navigation to: {}", url_str);
+                return true;
+            }
+        }
+
+        for path in &auth_paths {
+            if url_str.contains(path) {
+                #[cfg(debug_assertions)]
+                println!("Allowing auth path navigation to: {}", url_str);
+                return true;
+            }
+        }
+
+        // Allow all other navigation by default
+        true
+    });
 
     window_builder.build().expect("Failed to build window")
 }

@@ -9,8 +9,13 @@ use tauri_plugin_window_state::StateFlags;
 #[cfg(target_os = "macos")]
 use std::time::Duration;
 
+const WINDOW_SHOW_DELAY: u64 = 50;
+
 use app::{
-    invoke::{download_file, download_file_by_binary, send_notification},
+    invoke::{
+        clear_cache_and_restart, download_file, download_file_by_binary, send_notification,
+        update_theme_mode,
+    },
     setup::{set_global_shortcut, set_system_tray},
     window::set_window,
 };
@@ -42,7 +47,8 @@ pub fn run_app() {
         .plugin(tauri_plugin_oauth::init())
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_shell::init())
-        .plugin(tauri_plugin_notification::init());
+        .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_opener::init()); // Add this
 
     // Only add single instance plugin if multiple instances are not allowed
     if !multi_instance {
@@ -60,8 +66,23 @@ pub fn run_app() {
             download_file,
             download_file_by_binary,
             send_notification,
+            update_theme_mode,
+            clear_cache_and_restart,
         ])
         .setup(move |app| {
+            // --- Menu Construction Start ---
+            #[cfg(target_os = "macos")]
+            {
+                let menu = app::menu::get_menu(app.app_handle())?;
+                app.set_menu(menu)?;
+
+                // Event Handling for Custom Menu Item
+                app.on_menu_event(move |app_handle, event| {
+                    app::menu::handle_menu_click(app_handle, event.id().as_ref());
+                });
+            }
+            // --- Menu Construction End ---
+
             let window = set_window(app, &pake_config, &tauri_config);
             set_system_tray(
                 app.app_handle(),
@@ -76,7 +97,7 @@ pub fn run_app() {
             if !start_to_tray {
                 let window_clone = window.clone();
                 tauri::async_runtime::spawn(async move {
-                    tokio::time::sleep(tokio::time::Duration::from_millis(50)).await;
+                    tokio::time::sleep(tokio::time::Duration::from_millis(WINDOW_SHOW_DELAY)).await;
                     window_clone.show().unwrap();
                 });
             }
